@@ -25,7 +25,6 @@ from pyspark.sql.types import StructType, StructField, FloatType, IntegerType
 spark = SparkSession.builder \
     .appName("RealTimeAnalytics") \
     .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2") \
-    .config("spark.mongodb.output.uri", "mongodb://mongo:27017/iot.sensors") \
     .getOrCreate()
 
 schema = StructType([
