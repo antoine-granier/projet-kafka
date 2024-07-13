@@ -2,3 +2,4 @@ kafka-python
 six
 pymongo
 pyspark
+prometheus_client

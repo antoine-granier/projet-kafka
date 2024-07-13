@@ -1,5 +1,9 @@
 version: "3.3"
 
+networks:
+  my_network:
+    driver: bridge
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -8,6 +12,8 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - 2181:2181
+    networks:
+      - my_network
     healthcheck:
       test: nc -z localhost 2181 || exit -1
       interval: 10s
@@ -29,6 +35,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - my_network
     healthcheck:
       test: kafka-topics --bootstrap-server kafka:9092 --list
       interval: 10s
@@ -44,6 +52,8 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - my_network
 
   consumer-logs:
     build:
@@ -54,6 +64,8 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - my_network
 
   producer-sensors:
     build:
@@ -64,6 +76,8 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - my_network
 
   consumer-sensors:
     build:
@@ -74,6 +88,8 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - my_network
 
   producer-transactions:
     build:
@@ -84,6 +100,8 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - my_network
 
   consumer-transactions:
     build:
@@ -94,11 +112,15 @@ services:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
+    networks:
+      - my_network
 
   mongo:
     image: mongo:latest
     ports:
       - 27017:27017
+    networks:
+      - my_network
 
   prometheus:
     image: prom/prometheus
@@ -106,15 +128,25 @@ services:
       - 9090:9090
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - my_network
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:latest
+    container_name: grafana
     ports:
-      - 3000:3000
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini
+    environment:
+      # - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    networks:
+      - my_network
     depends_on:
       - prometheus
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - ./grafana.ini:/etc/grafana/grafana.ini
+
+volumes:
+  grafana-storage:
